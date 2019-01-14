@@ -6,19 +6,27 @@ import java.util.Map;
 import java.util.Scanner;
 
 import org.flowable.task.api.Task;
+import org.springframework.boot.SpringApplication;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.flowable.engine.HistoryService;
 import org.flowable.engine.ProcessEngine;
 import org.flowable.engine.ProcessEngineConfiguration;
 import org.flowable.engine.RepositoryService;
 import org.flowable.engine.RuntimeService;
 import org.flowable.engine.TaskService;
+import org.flowable.engine.history.HistoricActivityInstance;
 import org.flowable.engine.impl.cfg.StandaloneProcessEngineConfiguration;
 import org.flowable.engine.repository.Deployment;
 import org.flowable.engine.repository.ProcessDefinition;
 import org.flowable.engine.runtime.ProcessInstance;
 
+@RestController
 public class HolidayRequest {
+	
 
-  public static void main(String[] args) {
+  @GetMapping("/holiday")
+  public String start() {
 	  ProcessEngineConfiguration cfg = new StandaloneProcessEngineConfiguration()
 			  .setJdbcUrl("jdbc:h2:mem:flowable;DB_CLOSE_DELAY=-1")
 			  .setJdbcDriver("org.h2.Driver")
@@ -83,6 +91,20 @@ public class HolidayRequest {
 	  variables.put("approved", approved);
 	  taskService.complete(task.getId(), variables);
 	  
+	  HistoryService historyService = processEngine.getHistoryService();
+	  
+	  List<HistoricActivityInstance> activity = historyService.createHistoricActivityInstanceQuery()
+			  .processInstanceId(processinstance.getId())
+			  .finished()
+			  .orderByHistoricActivityInstanceEndTime().asc()
+			  .list();
+	  
+	  for(HistoricActivityInstance hai : activity)
+	  {
+		  System.out.println(hai.getActivityId()+ "Took "+ hai.getDurationInMillis()+" Milli seconds");
+	  }
+	  
+	  return "completed";
   }
 
 }
